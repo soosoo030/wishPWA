@@ -35,11 +35,12 @@
             md="4"
             lg="3"
             xl="2"
-            v-for="item in wishs"
+            v-for="item in uncompletedWishs"
             :key="item.key"
           >
+          
+          <!-- 기본 상태 -->
             <v-card
-              :class="{ style_completed: item.b_completed }"
               flat
               color="grey lighten-3"
               v-if="!item.b_edit"
@@ -54,8 +55,8 @@
                   <div>
                     <v-text-field label="추가할 금액을 입력해주세요" clearable v-if="item.b_Flag==true" v-model="iInputMoney"></v-text-field>
                   </div>
-                  <!-- 목표금액과 현재금액이 일치할때 생기는 celebration 아이콘 -->
-                  <v-icon class="pointer" v-if="false" @click="fnCompleteWish(item)">celebration</v-icon>
+                  <!-- 목표금액과 현재금액이 일치하거나 이상일때 생기는 celebration 아이콘 -->
+                  <v-icon class="pointer" v-if="item.wish_currMoney >= item.wish_goalMoney" @click="fnCompleteWish(item)">celebration</v-icon>
                   <!-- 현재 금액에 금액 추가할 수 있는 버튼 -->
                   <v-icon class="pointer" @click="fnSaveMoney(item)"
                     >savings</v-icon
@@ -69,6 +70,8 @@
                 </div>
               </v-card-text>
             </v-card>
+          
+          <!-- edit 가능 상태 -->
             <v-card v-else dark>
               <v-card-text>
                 <v-text-field
@@ -92,6 +95,7 @@
                 <v-icon class="pointer" @click="fnCancelEdit(item['.key'])">cancel</v-icon>
               </v-card-actions>
             </v-card>
+          
           </v-col>
         </v-row>
       </v-container>
@@ -99,6 +103,33 @@
         <v-col cols="12">
           <div class="text-center" width="100%">명예의 전당</div>
         </v-col>
+        <v-row>
+          <v-col
+            cols="12"
+            sm="6"
+            md="4"
+            lg="3"
+            xl="2"
+            v-for="item in completedWishs"
+            :key="item.key"
+          >
+          <!-- 완료 상태 -->
+          <v-card
+              flat
+              color="black"
+              v-if="item.b_completed"
+              dark
+            >
+              <v-card-title>
+                <h2>{{ item.wish_title }}</h2>
+              </v-card-title>
+              <v-card-text>
+                <p>{{ item.wish_goalMoney }}원 모았어요(❁´◡`❁)</p>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+        
       </v-container>
       <v-footer fixed dark>
         <div class="mx-auto">CREATED BY soosoo030</div>
@@ -192,10 +223,23 @@ export default {
     fnCompleteWish(pItem){
       const sKey = pItem['.key'];
       oWishsinDB.child(sKey).update({
-        b_completed:pItem.b_completed
+        b_completed:true
       })
     }
   },
+
+  computed:{
+    completedWishs: function(){
+      return this.wishs.filter(function (wish){
+        return wish.b_completed
+      })
+    },
+    uncompletedWishs: function(){
+      return this.wishs.filter(function(wish){
+        return !wish.b_completed
+      })
+    }
+  }
 };
 </script>
 <style>
@@ -203,6 +247,6 @@ export default {
   cursor:pointer;
 }
 .style_completed{
-  text-decoration:line-through;
+  
 }
 </style>
