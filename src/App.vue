@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <v-app-bar app color="#FAE8A8">
-      <v-toolbar-title>WishMallow</v-toolbar-title>
+      <v-toolbar-title>✨WishMallow</v-toolbar-title>
     </v-app-bar>
     <v-main>
       <v-container>
@@ -17,12 +17,11 @@
               v-model="sWishGoalMoney"
             ></v-text-field>
           </v-col>
-          <v-col cols="2" my-2>
+          <v-col cols="2" my-2 class="submitBtnDiv">
             <v-btn
-              fab
-              max-height="50px"
-              max-width="50px"
-              color="#FEA14B"
+              height="80%"
+              width="80%"
+              color="#b50d0c"
               dark
               @click="fnSubmitWish()"
             >
@@ -38,25 +37,43 @@
             v-for="item in uncompletedWishs"
             :key="item.key"
           >
-          
-          <!-- 기본 상태 -->
-            <v-card
-              flat
-              color="grey lighten-3"
-              v-if="!item.b_edit"
-            >
+            <!-- 기본 상태 -->
+            <v-card flat color="#FAE8A8" v-if="!item.b_edit">
               <v-card-title>
                 <h2>{{ item.wish_title }}</h2>
               </v-card-title>
               <v-card-text>
                 <p>목표 금액 : {{ item.wish_goalMoney }}</p>
                 <p>현재 금액 : {{ item.wish_currMoney }}</p>
+
+                <!-- 입금 내역 -->
+                <div
+                  v-for="historyItem in item.historyArr"
+                  v-if="item.b_historyFlag"
+                >
+                  • {{ historyItem.date | yyyyMMdd }} :
+                  {{ historyItem.money }}원
+                </div>
+
                 <div align="right">
                   <div>
-                    <v-text-field label="추가할 금액을 입력해주세요" clearable v-if="item.b_Flag==true" v-model="iInputMoney"></v-text-field>
+                    <v-text-field
+                      label="추가할 금액을 입력해주세요"
+                      clearable
+                      v-if="item.b_Flag == true"
+                      v-model="iInputMoney"
+                    ></v-text-field>
                   </div>
                   <!-- 목표금액과 현재금액이 일치하거나 이상일때 생기는 celebration 아이콘 -->
-                  <v-icon class="pointer" v-if="item.wish_currMoney >= item.wish_goalMoney" @click="fnCompleteWish(item)">celebration</v-icon>
+                  <v-icon
+                    class="pointer"
+                    v-if="item.wish_currMoney >= item.wish_goalMoney"
+                    @click="fnCompleteWish(item)"
+                    >celebration</v-icon
+                  >
+                  <v-icon class="pointer" @click="fnSetHistoryFlag(item)"
+                    >receipt_long</v-icon
+                  >
                   <!-- 현재 금액에 금액 추가할 수 있는 버튼 -->
                   <v-icon class="pointer" @click="fnSaveMoney(item)"
                     >savings</v-icon
@@ -70,8 +87,8 @@
                 </div>
               </v-card-text>
             </v-card>
-          
-          <!-- edit 가능 상태 -->
+
+            <!-- edit 가능 상태 -->
             <v-card v-else dark>
               <v-card-text>
                 <v-text-field
@@ -91,17 +108,20 @@
               <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-icon class="pointer mr-2" @click="fnSaveEdit(item)"
-                  >save</v-icon>
-                <v-icon class="pointer" @click="fnCancelEdit(item['.key'])">cancel</v-icon>
+                  >save</v-icon
+                >
+                <v-icon class="pointer" @click="fnCancelEdit(item['.key'])"
+                  >cancel</v-icon
+                >
               </v-card-actions>
             </v-card>
-          
           </v-col>
         </v-row>
       </v-container>
+
       <v-container>
         <v-col cols="12">
-          <div class="text-center" width="100%">명예의 전당</div>
+          <h1 class="text-center" width="100%">명예의 전당</h1>
         </v-col>
         <v-row>
           <v-col
@@ -113,23 +133,38 @@
             v-for="item in completedWishs"
             :key="item.key"
           >
-          <!-- 완료 상태 -->
-          <v-card
+            <!-- 완료 상태 -->
+            <v-card
+              class="style_completed"
               flat
-              color="black"
+              color="#345079"
               v-if="item.b_completed"
               dark
             >
               <v-card-title>
                 <h2>{{ item.wish_title }}</h2>
+                <v-spacer></v-spacer>
+                <v-icon class="pointer" @click="fnSetHistoryFlag(item)"
+                    >receipt_long</v-icon
+                  >
+                <v-icon class="pointer" @click="fnRemoveWish(item['.key'])"
+                  >delete</v-icon
+                >
               </v-card-title>
               <v-card-text>
                 <p>{{ item.wish_goalMoney }}원 모았어요(❁´◡`❁)</p>
+                <!-- 입금 내역 -->
+                <div
+                  v-for="historyItem in item.historyArr"
+                  v-if="item.b_historyFlag"
+                >
+                  • {{ historyItem.date | yyyyMMdd }} :
+                  {{ historyItem.money }}원
+                </div>
               </v-card-text>
             </v-card>
           </v-col>
         </v-row>
-        
       </v-container>
       <v-footer fixed dark>
         <div class="mx-auto">CREATED BY soosoo030</div>
@@ -151,8 +186,13 @@ export default {
       sWishTitle: "",
       sWishGoalMoney: "",
       sWishCurrMoney: 0,
-      bFlag:false,
-      iInputMoney:0,
+      bFlag: false,
+      iInputMoney: 0,
+      //입금내역_날짜, 입금내역_금액
+      history_date: "",
+      history_money: 0,
+      historyArr: [],
+      b_historyFlag: false,
     };
   },
   // 파이어베이스를 쉽게 사용하도록 wishs 변수로 변경
@@ -169,6 +209,8 @@ export default {
         b_completed: false,
         b_edit: false,
         b_Flag: false,
+        b_historyFlag: false,
+        historyArr: [],
       });
       this.sWishTitle = "";
       this.sWishGoalMoney = "";
@@ -184,19 +226,37 @@ export default {
       });
     },
     //전달된 금액을 해당 wish의 currMoney에 추가하기
-    fnSaveMoney(pItem){
-      const sKey = pItem['.key'];
-      if(pItem.b_Flag==true){
+    fnSaveMoney(pItem) {
+      const sKey = pItem[".key"];
+      if (pItem.b_Flag == true) {
         // 입력된 금액을 더해서 currMoney 값을 변경해주기
-        console.log(this.iInputMoney);
+        if (pItem.historyArr) {
+          console.log("pItem.historyArr이 있어요!");
+          oWishsinDB.child(sKey).update({
+            b_Flag: false,
+            wish_currMoney:
+              parseInt(pItem.wish_currMoney) + parseInt(this.iInputMoney),
+            // 내역 추가
+            historyArr: [
+              ...pItem.historyArr,
+              { date: Date.now(), money: parseInt(this.iInputMoney) },
+            ],
+          });
+        } else {
+          oWishsinDB.child(sKey).update({
+            b_Flag: false,
+            wish_currMoney:
+              parseInt(pItem.wish_currMoney) + parseInt(this.iInputMoney),
+            // 내역 추가
+            historyArr: [
+              { date: Date.now(), money: parseInt(this.iInputMoney) },
+            ],
+          });
+        }
+      } else {
         oWishsinDB.child(sKey).update({
-          b_Flag:false,
-          wish_currMoney : parseInt(pItem.wish_currMoney)+parseInt(this.iInputMoney),
-        })
-      }else{
-        oWishsinDB.child(sKey).update({
-        b_Flag:true,
-      })
+          b_Flag: true,
+        });
       }
       this.iInputMoney = 0;
     },
@@ -220,33 +280,61 @@ export default {
       });
     },
     //완료된 wish의 b_completed 변경값 저장
-    fnCompleteWish(pItem){
-      const sKey = pItem['.key'];
+    fnCompleteWish(pItem) {
+      const sKey = pItem[".key"];
       oWishsinDB.child(sKey).update({
-        b_completed:true
-      })
-    }
+        b_completed: true,
+      });
+    },
+    fnSetHistoryFlag(pItem) {
+      const sKey = pItem[".key"];
+      oWishsinDB.child(sKey).update({
+        b_historyFlag: !pItem.b_historyFlag,
+      });
+    },
   },
 
-  computed:{
-    completedWishs: function(){
-      return this.wishs.filter(function (wish){
-        return wish.b_completed
-      })
+  computed: {
+    completedWishs: function () {
+      return this.wishs.filter(function (wish) {
+        return wish.b_completed;
+      });
     },
-    uncompletedWishs: function(){
-      return this.wishs.filter(function(wish){
-        return !wish.b_completed
-      })
-    }
-  }
+    uncompletedWishs: function () {
+      return this.wishs.filter(function (wish) {
+        return !wish.b_completed;
+      });
+    },
+  },
+  filters: {
+    yyyyMMdd: function (value) {
+      if (value == "") return "";
+      var js_date = new Date(value);
+
+      var year = js_date.getFullYear();
+      var month = js_date.getMonth() + 1;
+      var day = js_date.getDate();
+
+      if (month < 10) {
+        month = "0" + month;
+      }
+      if (day < 10) {
+        day = "0" + day;
+      }
+      return year + "년 " + month + "월 " + day + "일";
+    },
+  },
 };
 </script>
 <style>
-.pointer{
-  cursor:pointer;
+.pointer {
+  cursor: pointer;
 }
-.style_completed{
-  
+.style_completed {
+}
+.submitBtnDiv {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>
