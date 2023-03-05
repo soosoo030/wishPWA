@@ -166,6 +166,9 @@
           </v-col>
         </v-row>
       </v-container>
+      <v-btn @click="DialogDelete">
+        햄이네 박사님
+      </v-btn>
       <v-footer fixed dark>
         <div class="mx-auto">CREATED BY soosoo030</div>
       </v-footer>
@@ -192,7 +195,7 @@ export default {
       history_date: "",
       history_money: 0,
       historyArr: [],
-      b_historyFlag: false,
+      b_historyFlag: false,      
     };
   },
   // 파이어베이스를 쉽게 사용하도록 wishs 변수로 변경
@@ -217,7 +220,11 @@ export default {
     },
     // 전달된 wish를 DB에서 삭제
     fnRemoveWish(pKey) {
-      oWishsinDB.child(pKey).remove();
+      const r = this.DialogDelete();
+      console.log(r);
+      if(r){
+        oWishsinDB.child(pKey).remove();
+      }
     },
     //전달된 wish의 b_edit을 수정모드로 변경
     fnSetEditWish(pKey) {
@@ -231,7 +238,6 @@ export default {
       if (pItem.b_Flag == true) {
         // 입력된 금액을 더해서 currMoney 값을 변경해주기
         if (pItem.historyArr) {
-          console.log("pItem.historyArr이 있어요!");
           oWishsinDB.child(sKey).update({
             b_Flag: false,
             wish_currMoney:
@@ -253,12 +259,17 @@ export default {
             ],
           });
         }
+        // 목표 달성 시, 다이얼로그 띄우기
+        if(pItem.wish_currMoney >= pItem.wish_goalMoney){
+        this.DialogCelebration(pItem);
+      }
       } else {
         oWishsinDB.child(sKey).update({
           b_Flag: true,
         });
       }
       this.iInputMoney = 0;
+      
     },
 
     //전달된 wish의 b_edit을 읽기모드로 변경
@@ -292,6 +303,18 @@ export default {
         b_historyFlag: !pItem.b_historyFlag,
       });
     },
+
+    // 삭제 전 확인용 팝업
+    DialogDelete:async function(){
+      const r = await this.$dialog.warning({title:'정말 삭제하시겠습니까?', text: '삭제 시, 되돌릴 수 없습니다.', button:{yes:'네'} })
+      if (!r) return false;
+      else if(r) return true;
+    },
+    // 완료 시 축하용 팝업
+    DialogCelebration:async function(item){
+      const r = await this.$dialog.confirm({ title: '목표금액을 달성했습니다! (*ˊᵕˋo💐o', text:'(ง˙∇˙)ว  명예의 전당으로 이동할까요?'})
+      if(r) return this.fnCompleteWish(item);
+    }
   },
 
   computed: {
@@ -330,8 +353,7 @@ export default {
 .pointer {
   cursor: pointer;
 }
-.style_completed {
-}
+
 .submitBtnDiv {
   display: flex;
   justify-content: center;
