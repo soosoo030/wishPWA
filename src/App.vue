@@ -41,6 +41,18 @@
             <v-card flat color="#FAE8A8" v-if="!item.b_edit">
               <v-card-title>
                 <h2>{{ item.wish_title }}</h2>
+                <v-spacer></v-spacer>
+                <!-- 목표금액과 현재금액이 일치하거나 이상일때 생기는 celebration 아이콘 -->
+                <v-icon
+                    class="pointer"
+                    v-if="item.wish_currMoney >= item.wish_goalMoney"
+                    @click="fnCompleteWish(item)"
+                    color="#b50d0c"
+                    >celebration</v-icon
+                  >
+                  <v-icon class="pointer" @click="fnSetHistoryFlag(item)"
+                    >receipt_long</v-icon
+                  >
               </v-card-title>
               <v-card-text>
                 <p>목표 금액 : {{ item.wish_goalMoney }}</p>
@@ -64,16 +76,7 @@
                       v-model="iInputMoney"
                     ></v-text-field>
                   </div>
-                  <!-- 목표금액과 현재금액이 일치하거나 이상일때 생기는 celebration 아이콘 -->
-                  <v-icon
-                    class="pointer"
-                    v-if="item.wish_currMoney >= item.wish_goalMoney"
-                    @click="fnCompleteWish(item)"
-                    >celebration</v-icon
-                  >
-                  <v-icon class="pointer" @click="fnSetHistoryFlag(item)"
-                    >receipt_long</v-icon
-                  >
+                  
                   <!-- 현재 금액에 금액 추가할 수 있는 버튼 -->
                   <v-icon class="pointer" @click="fnSaveMoney(item)"
                     >savings</v-icon
@@ -81,7 +84,7 @@
                   <v-icon class="pointer" @click="fnSetEditWish(item['.key'])"
                     >create</v-icon
                   >
-                  <v-icon class="pointer" @click="fnRemoveWish(item['.key'])"
+                  <v-icon class="pointer" @click="DialogDelete(item['.key'])"
                     >delete</v-icon
                   >
                 </div>
@@ -147,7 +150,7 @@
                 <v-icon class="pointer" @click="fnSetHistoryFlag(item)"
                     >receipt_long</v-icon
                   >
-                <v-icon class="pointer" @click="fnRemoveWish(item['.key'])"
+                <v-icon class="pointer" @click="DialogDelete(item['.key'])"
                   >delete</v-icon
                 >
               </v-card-title>
@@ -166,9 +169,6 @@
           </v-col>
         </v-row>
       </v-container>
-      <v-btn @click="DialogDelete">
-        햄이네 박사님
-      </v-btn>
       <v-footer fixed dark>
         <div class="mx-auto">CREATED BY soosoo030</div>
       </v-footer>
@@ -220,11 +220,7 @@ export default {
     },
     // 전달된 wish를 DB에서 삭제
     fnRemoveWish(pKey) {
-      const r = this.DialogDelete();
-      console.log(r);
-      if(r){
-        oWishsinDB.child(pKey).remove();
-      }
+      oWishsinDB.child(pKey).remove();
     },
     //전달된 wish의 b_edit을 수정모드로 변경
     fnSetEditWish(pKey) {
@@ -260,7 +256,7 @@ export default {
           });
         }
         // 목표 달성 시, 다이얼로그 띄우기
-        if(pItem.wish_currMoney >= pItem.wish_goalMoney){
+        if(pItem.wish_currMoney+parseInt(this.iInputMoney) >= pItem.wish_goalMoney){
         this.DialogCelebration(pItem);
       }
       } else {
@@ -305,10 +301,10 @@ export default {
     },
 
     // 삭제 전 확인용 팝업
-    DialogDelete:async function(){
-      const r = await this.$dialog.warning({title:'정말 삭제하시겠습니까?', text: '삭제 시, 되돌릴 수 없습니다.', button:{yes:'네'} })
+    DialogDelete:async function(pKey){
+      const r = await this.$dialog.warning({title:'정말 삭제하시겠습니까?', text: '삭제 시, 되돌릴 수 없습니다.'})
       if (!r) return false;
-      else if(r) return true;
+      else if(r) return this.fnRemoveWish(pKey);
     },
     // 완료 시 축하용 팝업
     DialogCelebration:async function(item){
