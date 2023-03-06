@@ -50,7 +50,7 @@
                     color="#b50d0c"
                     >celebration</v-icon
                   >
-                  <v-icon class="pointer" @click="fnSetHistoryFlag(item)"
+                  <v-icon :class="{'style_iconActive':item.b_historyFlag}" @click="fnSetHistoryFlag(item)"
                     >receipt_long</v-icon
                   >
               </v-card-title>
@@ -147,7 +147,7 @@
               <v-card-title>
                 <h2>{{ item.wish_title }}</h2>
                 <v-spacer></v-spacer>
-                <v-icon class="pointer" @click="fnSetHistoryFlag(item)"
+                <v-icon :class="{'style_iconActive':item.b_historyFlag}" @click="fnSetHistoryFlag(item)"
                     >receipt_long</v-icon
                   >
                 <v-icon class="pointer" @click="DialogDelete(item['.key'])"
@@ -192,8 +192,6 @@ export default {
       bFlag: false,
       iInputMoney: 0,
       //입금내역_날짜, 입금내역_금액
-      history_date: "",
-      history_money: 0,
       historyArr: [],
       b_historyFlag: false,      
     };
@@ -354,5 +352,8 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+.style_iconActive{
+  color: #b50d0c !important;
 }
 </style>
