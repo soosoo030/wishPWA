@@ -44,15 +44,17 @@
                 <v-spacer></v-spacer>
                 <!-- 목표금액과 현재금액이 일치하거나 이상일때 생기는 celebration 아이콘 -->
                 <v-icon
-                    class="pointer"
-                    v-if="item.wish_currMoney >= item.wish_goalMoney"
-                    @click="fnCompleteWish(item)"
-                    color="#b50d0c"
-                    >celebration</v-icon
-                  >
-                  <v-icon :class="{'style_iconActive':item.b_historyFlag}" @click="fnSetHistoryFlag(item)"
-                    >receipt_long</v-icon
-                  >
+                  class="pointer"
+                  v-if="item.wish_currMoney >= item.wish_goalMoney"
+                  @click="fnCompleteWish(item)"
+                  color="#b50d0c"
+                  >celebration</v-icon
+                >
+                <v-icon
+                  :class="{ style_iconActive: item.b_historyFlag }"
+                  @click="fnSetHistoryFlag(item)"
+                  >receipt_long</v-icon
+                >
               </v-card-title>
               <v-card-text>
                 <p>목표 금액 : {{ item.wish_goalMoney }}</p>
@@ -76,17 +78,30 @@
                       v-model="iInputMoney"
                     ></v-text-field>
                   </div>
-                  
+                  <div v-if="item.b_Flag">
+                    <v-icon
+                      :class="{ style_iconActive: item.b_Flag }"
+                      @click="fnSaveEdit(item)"
+                      >savings</v-icon
+                    >
+                    <v-icon
+                      class="pointer ml-2"
+                      @click="fnCancelSave(item['.key'])"
+                      >cancel</v-icon
+                    >
+                  </div>
                   <!-- 현재 금액에 금액 추가할 수 있는 버튼 -->
-                  <v-icon class="pointer" @click="fnSaveMoney(item)"
-                    >savings</v-icon
-                  >
-                  <v-icon class="pointer" @click="fnSetEditWish(item['.key'])"
-                    >create</v-icon
-                  >
-                  <v-icon class="pointer" @click="DialogDelete(item['.key'])"
-                    >delete</v-icon
-                  >
+                  <div v-else>
+                    <v-icon class="pointer" @click="fnSaveMoney(item)"
+                      >savings</v-icon
+                    >
+                    <v-icon class="pointer" @click="fnSetEditWish(item['.key'])"
+                      >create</v-icon
+                    >
+                    <v-icon class="pointer" @click="DialogDelete(item['.key'])"
+                      >delete</v-icon
+                    >
+                  </div>
                 </div>
               </v-card-text>
             </v-card>
@@ -147,9 +162,11 @@
               <v-card-title>
                 <h2>{{ item.wish_title }}</h2>
                 <v-spacer></v-spacer>
-                <v-icon :class="{'style_iconActive':item.b_historyFlag}" @click="fnSetHistoryFlag(item)"
-                    >receipt_long</v-icon
-                  >
+                <v-icon
+                  :class="{ style_iconActive: item.b_historyFlag }"
+                  @click="fnSetHistoryFlag(item)"
+                  >receipt_long</v-icon
+                >
                 <v-icon class="pointer" @click="DialogDelete(item['.key'])"
                   >delete</v-icon
                 >
@@ -193,7 +210,7 @@ export default {
       iInputMoney: 0,
       //입금내역_날짜, 입금내역_금액
       historyArr: [],
-      b_historyFlag: false,      
+      b_historyFlag: false,
     };
   },
   // 파이어베이스를 쉽게 사용하도록 wishs 변수로 변경
@@ -254,23 +271,27 @@ export default {
           });
         }
         // 목표 달성 시, 다이얼로그 띄우기
-        if(pItem.wish_currMoney+parseInt(this.iInputMoney) >= pItem.wish_goalMoney){
-        this.DialogCelebration(pItem);
-      }
+        if (
+          pItem.wish_currMoney + parseInt(this.iInputMoney) >=
+          pItem.wish_goalMoney
+        ) {
+          this.DialogCelebration(pItem);
+        }
       } else {
         oWishsinDB.child(sKey).update({
           b_Flag: true,
         });
       }
       this.iInputMoney = 0;
-      
+    },
+    // 전달된 wish의 금액 입력 상태 취소하기
+    fnCancelSave(pKey){
+      oWishsinDB.child(pKey).update({ b_Flag: false, })
     },
 
     //전달된 wish의 b_edit을 읽기모드로 변경
     fnCancelEdit(pKey) {
-      oWishsinDB.child(pKey).update({
-        b_edit: false,
-      });
+      oWishsinDB.child(pKey).update({ b_edit: false, });
     },
     //전달된 wish의 수정값을 DB에 저장
     fnSaveEdit(pItem) {
@@ -299,16 +320,22 @@ export default {
     },
 
     // 삭제 전 확인용 팝업
-    DialogDelete:async function(pKey){
-      const r = await this.$dialog.warning({title:'정말 삭제하시겠습니까?', text: '삭제 시, 되돌릴 수 없습니다.'})
+    DialogDelete: async function (pKey) {
+      const r = await this.$dialog.warning({
+        title: "정말 삭제하시겠습니까?",
+        text: "삭제 시, 되돌릴 수 없습니다.",
+      });
       if (!r) return false;
-      else if(r) return this.fnRemoveWish(pKey);
+      else if (r) return this.fnRemoveWish(pKey);
     },
     // 완료 시 축하용 팝업
-    DialogCelebration:async function(item){
-      const r = await this.$dialog.confirm({ title: '목표금액을 달성했습니다! (*ˊᵕˋo💐o', text:'(ง˙∇˙)ว  명예의 전당으로 이동할까요?'})
-      if(r) return this.fnCompleteWish(item);
-    }
+    DialogCelebration: async function (item) {
+      const r = await this.$dialog.confirm({
+        title: "목표금액을 달성했습니다! (*ˊᵕˋo💐o",
+        text: "(ง˙∇˙)ว  명예의 전당으로 이동할까요?",
+      });
+      if (r) return this.fnCompleteWish(item);
+    },
   },
 
   computed: {
@@ -353,7 +380,7 @@ export default {
   justify-content: center;
   align-items: center;
 }
-.style_iconActive{
+.style_iconActive {
   color: #b50d0c !important;
 }
 </style>
