@@ -81,7 +81,7 @@
                   <div v-if="item.b_Flag">
                     <v-icon
                       :class="{ style_iconActive: item.b_Flag }"
-                      @click="fnSaveEdit(item)"
+                      @click="fnSaveMoney(item)"
                       >savings</v-icon
                     >
                     <v-icon
@@ -220,6 +220,7 @@ export default {
   methods: {
     // title, money, 완료, 상탯값을 DB에 저장
     fnSubmitWish() {
+      if(this.Validation(parseInt(this.sWishGoalMoney))){
       oWishsinDB.push({
         wish_title: this.sWishTitle,
         wish_goalMoney: this.sWishGoalMoney,
@@ -232,6 +233,9 @@ export default {
       });
       this.sWishTitle = "";
       this.sWishGoalMoney = "";
+    }else{ //유효성 검사 실패 시
+      this.$dialog.warning({title:'금액 오류', text:'올바른 금액을 입력해주세요 ●˙^˙●'});
+    }
     },
     // 전달된 wish를 DB에서 삭제
     fnRemoveWish(pKey) {
@@ -247,6 +251,7 @@ export default {
     fnSaveMoney(pItem) {
       const sKey = pItem[".key"];
       if (pItem.b_Flag == true) {
+        if(this.Validation(parseInt(this.iInputMoney))){
         // 입력된 금액을 더해서 currMoney 값을 변경해주기
         if (pItem.historyArr) {
           oWishsinDB.child(sKey).update({
@@ -270,6 +275,10 @@ export default {
             ],
           });
         }
+      }else{
+        this.$dialog.warning({title:'금액 오류', text:'올바른 금액을 입력해주세요 ●˙^˙●'});
+      }
+        
         // 목표 달성 시, 다이얼로그 띄우기
         if (
           pItem.wish_currMoney + parseInt(this.iInputMoney) >=
@@ -296,7 +305,8 @@ export default {
     //전달된 wish의 수정값을 DB에 저장
     fnSaveEdit(pItem) {
       const sKey = pItem[".key"];
-      oWishsinDB.child(sKey).set({
+      if(this.Validation(parseInt(pItem.wish_goalMoney))){
+        oWishsinDB.child(sKey).set({
         wish_title: pItem.wish_title,
         wish_goalMoney: pItem.wish_goalMoney,
         wish_currMoney: pItem.wish_currMoney,
@@ -304,6 +314,9 @@ export default {
         b_edit: false,
         b_Flag: false,
       });
+      }else{
+        this.$dialog.warning({title:'금액 오류', text:'올바른 금액을 입력해주세요 ●˙^˙●'});
+      }
     },
     //완료된 wish의 b_completed 변경값 저장
     fnCompleteWish(pItem) {
@@ -335,6 +348,14 @@ export default {
         text: "(ง˙∇˙)ว  명예의 전당으로 이동할까요?",
       });
       if (r) return this.fnCompleteWish(item);
+    },
+    // 유효성 검사 함수
+    Validation : function(num){
+      // (1) 숫자 형태 여야 하고
+      // (2) 0이면 안 됨
+      if(Number.isInteger(num) && num !== 0){
+        return true;
+      }else{ return false;}
     },
   },
 
